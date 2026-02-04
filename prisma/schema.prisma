@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+}
+
+enum MetalType {
+  GOLD
+  SILVER
+  PLATINUM
+}
+
+enum ItemType {
+  JEWELLERY
+  BAR
+  LOOSE_STONE
+}
+
+enum TransactionType {
+  SALE
+  PURCHASE
+  EXCHANGE
+  RETURN
+}
+
+enum PaymentMode {
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+  CARD
+  METAL
+}
+
+enum ChequeStatus {
+  PENDING
+  CLEARED
+  BOUNCED
+}
+
+model Tenant {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  address     String?
+  contact     String?
+  currency    String   @default("USD")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  users       User[]
+  customers   Customer[]
+  vendors     Vendor[]
+  items       Item[]
+  transactions Transaction[]
+  rates       Rate[]
+  metals      Metal[]
+  journals    Journal[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      UserRole @default(STAFF)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  transactions Transaction[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Metal {
+  id        String @id @default(uuid())
+  name      String
+  code      String
+  tenantId  String
+  tenant    Tenant @relation(fields: [tenantId], references: [id])
+  
+  karats    Karat[]
+  rates     Rate[]
+  
+  @@unique([tenantId, name])
+}
+
+model Karat {
+  id        String @id @default(uuid())
+  name      String
+  purity    Float
+  metalId   String
+  metal     Metal  @relation(fields: [metalId], references: [id])
+  
+  items     Item[]
+  rates     Rate[]
+}
+
+model Rate {
+  id        String   @id @default(uuid())
+  date      DateTime @default(now())
+  buyRate   Decimal
+  sellRate  Decimal
+  karatId   String
+  karat     Karat    @relation(fields: [karatId], references: [id])
+  metalId   String
+  metal     Metal    @relation(fields: [metalId], references: [id])
+  
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  transactions Transaction[]
+  ledgers      Journal[]
+}
+
+model Vendor {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  transactions Transaction[]
+  ledgers      Journal[]
+}
+
+model Item {
+  id          String   @id @default(uuid())
+  name        String
+  sku         String?
+  type        ItemType
+  barcode     String?
+  
+  grossWeight Decimal  @default(0)
+  stoneWeight Decimal  @default(0)
+  netWeight   Decimal  @default(0)
+  
+  karatId     String
+  karat       Karat    @relation(fields: [karatId], references: [id])
+  
+  makingCharge Decimal @default(0)
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  stock       Int      @default(0)
+  location    String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  transactionItems TransactionItem[]
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  number      String
+  date        DateTime        @default(now())
+  type        TransactionType
+  
+  customerId  String?
+  customer    Customer?       @relation(fields: [customerId], references: [id])
+  vendorId    String?
+  vendor      Vendor?         @relation(fields: [vendorId], references: [id])
+  
+  userId      String
+  user        User            @relation(fields: [userId], references: [id])
+  
+  totalAmount     Decimal     @default(0)
+  totalMetalValue Decimal     @default(0)
+  taxAmount       Decimal     @default(0)
+  finalAmount     Decimal     @default(0)
+  
+  paidAmount      Decimal     @default(0)
+  balanceAmount   Decimal     @default(0)
+  
+  items           TransactionItem[]
+  payments        Payment[]
+  
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id])
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model TransactionItem {
+  id            String      @id @default(uuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  
+  itemId        String?
+  item          Item?       @relation(fields: [itemId], references: [id])
+  
+  description   String
+  
+  quantity      Int         @default(1)
+  grossWeight   Decimal
+  stoneWeight   Decimal
+  netWeight     Decimal
+  
+  purity        Float
+  fineWeight    Decimal
+  
+  rate          Decimal
+  makingCharge  Decimal
+  taxPercent    Decimal
+  taxAmount     Decimal
+  total         Decimal
+  
+  wastage       Decimal     @default(0)
+}
+
+model Payment {
+  id            String       @id @default(uuid())
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  
+  date          DateTime     @default(now())
+  amount        Decimal
+  mode          PaymentMode
+  
+  chequeNo      String?
+  chequeDate    DateTime?
+  chequeStatus  ChequeStatus?
+  
+  bankName      String?
+  
+  tenantId      String
+  
+  createdAt     DateTime     @default(now())
+}
+
+model Journal {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  description String
+  
+  debit       Decimal  @default(0)
+  credit      Decimal  @default(0)
+  
+  metalDebit  Decimal  @default(0)
+  metalCredit Decimal  @default(0)
+  
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  vendorId    String?
+  vendor      Vendor?   @relation(fields: [vendorId], references: [id])
+  
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+}
