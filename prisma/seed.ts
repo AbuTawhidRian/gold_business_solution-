@@ -1,4 +1,5 @@
-import { PrismaClient, UserRole, MetalType, ItemType } from '@prisma/client'
+import { PrismaClient, UserRole, ItemType } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -20,13 +21,16 @@ async function main() {
   console.log('Created Tenant:', tenant.name)
 
   // 2. Create Users
+  const hashedPassword = bcrypt.hashSync('password123', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@gold.com' },
-    update: {},
+    update: {
+      password: hashedPassword
+    },
     create: {
       email: 'admin@gold.com',
       name: 'Admin User',
-      password: 'password123', // In real app, hash this!
+      password: hashedPassword,
       role: UserRole.SUPER_ADMIN,
       tenantId: tenant.id
     },
