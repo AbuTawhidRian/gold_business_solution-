@@ -1,133 +1,92 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area" // I need to check if ScrollArea is installed? No, I didn't install it. I'll use div overflow.
-import { 
-  LayoutDashboard, 
-  Package, 
-  ShoppingCart, 
-  RefreshCcw, 
-  FileText, 
-  Users, 
-  Settings, 
-  LogOut,
-  Menu,
-  X
-} from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { cn } from "@/lib/utils"
+import { 
+  LayoutDashboard, 
+  Settings, 
+  Package, 
+  ShoppingCart, 
+  BarChart3, 
+  Users,
+  Gem,
+  Coins
+} from "lucide-react"
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
+const sidebarItems = [
+  {
+    title: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Masters",
+    href: "/dashboard/masters",
+    icon: Settings,
+    submenu: [
+        { title: "Metals & Karats", href: "/dashboard/masters/metals" },
+        { title: "Customers", href: "/dashboard/masters/customers" },
+        { title: "Vendors", href: "/dashboard/masters/vendors" },
+    ]
+  },
+  {
+    title: "Inventory",
+    href: "/dashboard/inventory",
+    icon: Package,
+  },
+  {
+    title: "Transactions",
+    href: "/dashboard/transactions",
+    icon: ShoppingCart,
+  },
+  {
+    title: "Reports",
+    href: "/dashboard/reports",
+    icon: BarChart3,
+  },
+]
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname()
-  
-  const routes = [
-    {
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      href: "/dashboard",
-      color: "text-sky-500",
-    },
-    {
-      label: "Inventory",
-      icon: Package,
-      href: "/dashboard/inventory",
-      color: "text-violet-500",
-    },
-    {
-      label: "Sales & Purchase",
-      icon: ShoppingCart,
-      href: "/dashboard/transactions",
-      color: "text-pink-700",
-    },
-    {
-      label: "Metal Exchange",
-      icon: RefreshCcw,
-      href: "/dashboard/exchange",
-      color: "text-orange-700",
-    },
-    {
-      label: "Reports",
-      icon: FileText,
-      href: "/dashboard/reports",
-      color: "text-emerald-500",
-    },
-    {
-      label: "Parties",
-      icon: Users,
-      href: "/dashboard/parties",
-      color: "text-blue-700",
-    },
-    {
-      label: "Settings",
-      icon: Settings,
-      href: "/dashboard/settings",
-    },
-  ]
 
   return (
-    <div className={cn("pb-12 space-y-4 py-4 flex flex-col h-full bg-sidebar border-r border-sidebar-border", className)}>
-      <div className="px-3 py-2 flex-1">
-        <Link href="/dashboard" className="flex items-center pl-3 mb-14">
-          <div className="relative w-8 h-8 mr-4 bg-primary rounded-full flex items-center justify-center">
-             <span className="text-primary-foreground font-bold">G</span>
+    <div className="flex h-screen w-64 flex-col bg-slate-900 text-slate-100 border-r border-slate-800">
+      <div className="flex h-16 items-center border-b border-slate-800 px-6">
+        <Gem className="h-6 w-6 text-amber-500 mr-2" />
+        <span className="text-lg font-bold tracking-tight text-amber-500">Gold SaaS</span>
+      </div>
+      <div className="flex-1 overflow-auto py-4">
+        <nav className="grid gap-1 px-2">
+          {sidebarItems.map((item, index) => {
+            const isActive = pathname === item.href || pathname?.startsWith(item.href + "/")
+            return (
+              <Link
+                key={index}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:text-amber-500 hover:bg-slate-800",
+                  isActive ? "bg-slate-800 text-amber-500" : "text-slate-400"
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.title}
+              </Link>
+            )
+          })}
+        </nav>
+      </div>
+      <div className="border-t border-slate-800 p-4">
+        <div className="flex items-center gap-3 rounded-lg bg-slate-800/50 p-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/10">
+            <Users className="h-4 w-4 text-amber-500" />
           </div>
-          <h1 className="text-2xl font-bold text-sidebar-foreground">
-            Gold SaaS
-          </h1>
-        </Link>
-        <div className="space-y-1">
-          {routes.map((route) => (
-            <Link
-              key={route.href}
-              href={route.href}
-              className={cn(
-                "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:text-sidebar-primary hover:bg-sidebar-accent rounded-lg transition",
-                pathname === route.href ? "text-sidebar-primary bg-sidebar-accent" : "text-muted-foreground"
-              )}
-            >
-              <div className="flex items-center flex-1">
-                <route.icon className={cn("h-5 w-5 mr-3", route.color)} />
-                {route.label}
-              </div>
-            </Link>
-          ))}
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-slate-200">Admin User</span>
+            <span className="text-[10px] text-slate-500">admin@gold.com</span>
+          </div>
         </div>
       </div>
-      <div className="px-3">
-         <Link
-              href="/auth/signout"
-              className={cn(
-                "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:text-destructive hover:bg-destructive/10 rounded-lg transition text-muted-foreground"
-              )}
-            >
-              <div className="flex items-center flex-1">
-                <LogOut className="h-5 w-5 mr-3 text-destructive" />
-                Sign Out
-              </div>
-            </Link>
-      </div>
     </div>
-  )
-}
-
-export function MobileSidebar() {
-  const [open, setOpen] = useState(false)
-  
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="p-0 bg-sidebar w-72">
-        <Sidebar />
-      </SheetContent>
-    </Sheet>
   )
 }
