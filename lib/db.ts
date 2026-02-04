@@ -1,0 +1,11 @@
+import { PrismaClient } from "@prisma/client"
+import { PrismaPg } from '@prisma/adapter-pg'
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
+
+// Initialize the adapter with connection config (Prisma 7 style)
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+
+export const db = globalForPrisma.prisma || new PrismaClient({ adapter })
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db

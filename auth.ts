@@ -1,12 +1,10 @@
 import NextAuth from "next-auth"
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { PrismaClient } from "@prisma/client"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { authConfig } from "./auth.config"
 import { z } from "zod"
-
-const prisma = new PrismaClient()
+import { db as prisma } from "@/lib/db"
 
 async function getUser(email: string) {
   try {
